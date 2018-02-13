@@ -1,0 +1,47 @@
+- hosts: tuned
+  gather_facts: no
+  tasks:
+    - name: tuned-adm package check
+      yum:
+        list: tuned
+      register: is_installed
+    - debug: var=is_installed
+
+    - name: Install tuned-adm
+      yum:
+        name: tuned
+        state: latest
+      when: is_installed.results[0].yumstate == 'available'
+
+    - name: Start tuned-adm
+      service:
+        name: tuned
+        state: started
+
+
+    - name: tuned-adm list
+      shell: tuned-adm list | grep '^-' | awk -F' ' '{print $2}' | egrep -v 'active|profiles:'
+      register: find_output
+
+    - debug:
+        msg: "{{ find_output.stdout_lines }}"
+
+- hosts: tuned
+  gather_facts: no
+  vars_prompt:
+    name: profile
+    prompt: Choose Profile
+    private: no
+    confirm: yes
+    default: desktop
+
+  tasks:
+    - name: start-profile
+      shell: tuned-adm profile "{{ profile }}"
+      when: profile in find_output.stdout_lines
+
+    - name: Current active profile
+      shell: tuned-adm list | grep Current
+      register: current_profile
+
+    - debug: var=current_profile.stdout_lines

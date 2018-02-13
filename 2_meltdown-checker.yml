@@ -1,0 +1,35 @@
+- name: Meltdown and Spectre Detector
+  hosts: web
+  gather_facts: no
+  tasks:
+    - name: Check writable to store checker.
+      stat:
+        path: spectre-meltdown-checker/spectre-meltdown-checker.sh
+    
+    #- name: Create spectre-meltdown-checker
+    #  file:
+    #    path: spectre-meltdown-checker/
+    #    state: directory
+    #  when: opt_stat.stat.exists == False
+    #
+    #- name: Download spectre-meltdown-checker
+    #  get_url:
+    #    url: "https://raw.githubusercontent.com/speed47/spectre-meltdown-checker/{{ checker_version }}/spectre-meltdown-checker.sh"
+    #    dest: /opt/spectre-meltdown-checker/spectre-meltdown-checker.sh
+    #    mode: u=rx,g=rx,o=r
+    #    force: yes
+    
+    - block:
+      - name: Run check variant 1~3 (Spectre & MeltDown)
+        shell: spectre-meltdown-checker/spectre-meltdown-checker.sh -n -d
+        register: check
+        failed_when: false
+        changed_when: false
+    
+      - name: Result vulnerability variant 1~3 (Spectre & MeltDown)
+        debug:
+          var: check.stdout_lines
+        changed_when: "'Vulnerable' in check.stdout"
+
+      - name: Each Result Print
+        debug: msg="{{ check.stdout | regex_findall("Variant*(.*)") }}"
