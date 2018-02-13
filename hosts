@@ -1,0 +1,5 @@
+[all:vars]
+ansible_host_password=redhat
+
+[tuned]
+192.168.75.151
